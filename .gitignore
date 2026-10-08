@@ -2,6 +2,7 @@
 /fastlog/
 /matchlog/
 /.migration-backups/
+/.tools/
 /admin.*.xml.txt
 /store.*.fast
 /votes.xml.txt

@@ -116,3 +116,42 @@ remains pending until the deployment inventory, backups, staging isolation, and
 legacy behavior observations above have been completed.
 
 No PHP 8.5 compatibility claim should be made from source inspection alone.
+
+## Local PHP 8.5 validation tooling
+
+The Windows x64 development runtime is pinned to PHP 8.5.11 NTS. Run
+`./tools/Install-Php.ps1` from PowerShell to install it in `.tools/php/`.
+The installer downloads the official PHP Windows archive and verifies its pinned
+SHA-256 checksum. It does not modify system PATH or an existing PHP installation.
+The Microsoft Visual C++ 2015-2022 x64 runtime must already be available.
+
+Run `./tools/Test-Php.ps1` to perform runtime smoke tests and syntax-check all
+project PHP files. Reports are written to `.tools/reports/php-validation.txt`.
+The script exits unsuccessfully if the runtime checks or any syntax check fail.
+It does not execute `fast.php` or connect to servers or databases.
+
+`tools/php.ini` enables E_ALL diagnostics and the mbstring, mysqli, OpenSSL, and
+ZIP extensions. XML and zlib are included in the installed Windows runtime and
+are checked explicitly. mysqli is preparation for database migration, not a
+replacement for the existing mysql_* calls. Composer is not required for these
+checks and has not been installed.
+
+For a separately installed PHP 8.5 runtime, supply its executable using
+`./tools/Test-Php.ps1 -PhpPath /path/to/php` and make sure the same extensions are
+available. The local installer itself supports Windows x64 only.
+
+### First executable baseline
+
+- PHP 8.5.11 started successfully with the development configuration.
+- All 14 runtime smoke checks passed: version, CLI, diagnostics, six extensions,
+  XML parsing, compression, UTF-8 substring handling, and array serialization.
+- Syntax checks covered 88 existing PHP files plus the new runtime test.
+- 88 files passed syntax checking; `includes/GbxRemote.fast.php` failed with an
+  unexpected `{` at line 889.
+- The same file reported deprecated `(double)` and `(boolean)` casts at lines
+  255 and 279.
+
+These are recorded migration findings, not tooling failures. Application code
+has not been changed to address them yet. Syntax success elsewhere does not
+prove runtime compatibility; constructors, removed APIs, and event behavior
+still need audit and regression tests.
