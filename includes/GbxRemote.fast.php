@@ -59,7 +59,7 @@ class IXR_Value {
 	var $data;
 	var $type;
 
-	function IXR_Value ($data, $type = false) {
+ function __construct ($data, $type = false) {
 		$this->data = $data;
 		if (!$type) {
 			$type = $this->calculateType();
@@ -128,7 +128,7 @@ class IXR_Value {
 				return '<double>' . $this->data . '</double>';
 				break;
 			case 'string':
-				return '<string>' . htmlspecialchars($this->data) . '</string>';
+        return '<string>' . htmlspecialchars((string)$this->data, ENT_COMPAT, 'UTF-8') . '</string>';
 				break;
 			case 'array':
 				$xml = '';
@@ -172,7 +172,7 @@ class IXR_Message {
 	var $faultCode;
 	var $faultString;
 	var $methodName;
-	var $params;
+  var $params = array();
 	// Current variable stacks
 	var $_arraystructs = array();  // Stack to keep track of the current array/struct
 	var $_arraystructstypes = array();  // Stack to keep track of whether things are structs or array
@@ -180,11 +180,11 @@ class IXR_Message {
 	var $_param;
 	var $_value;
 	var $_currentTag;
-	var $_currentTagContents;
+ var $_currentTagContents = '';
 	// The XML parser
 	var $_parser;
 
-	function IXR_Message ($message) {
+ function __construct ($message) {
 		$this->message = $message;
 	}
 
@@ -198,18 +198,18 @@ class IXR_Message {
 		// Set XML parser to take the case of tags into account
 		xml_parser_set_option($this->_parser, XML_OPTION_CASE_FOLDING, false);
 		// Set XML parser callback functions
-		xml_set_object($this->_parser, $this);
-		xml_set_element_handler($this->_parser, 'tag_open', 'tag_close');
-		xml_set_character_data_handler($this->_parser, 'cdata');
-		if (!xml_parse($this->_parser, $this->message)) {
+    xml_set_element_handler($this->_parser, array($this, 'tag_open'), array($this, 'tag_close'));
+		xml_set_character_data_handler($this->_parser, array($this, 'cdata'));
+		if (!xml_parse($this->_parser, $this->message, true)) {
 			$this->messageType = 'fault';
 			$this->faultCode = xml_get_error_code($this->_parser);
 			$this->faultString = sprintf('XML error: %s at line %d',
 																	 xml_error_string(xml_get_error_code($this->_parser)),
 																	 xml_get_current_line_number($this->_parser));
+     $this->_parser = null;
 			return false;
 		}
-		xml_parser_free($this->_parser);
+    $this->_parser = null;
 		// Grab the error messages, if any
 		if ($this->messageType == 'fault') {
 			$this->faultCode = $this->params[0]['faultCode'];
@@ -219,7 +219,7 @@ class IXR_Message {
 	}
 
 	function tag_open($parser, $tag, $attr) {
-		$this->currentTag = $tag;
+   $this->_currentTag = $tag;
 		switch ($tag) {
 			case 'methodCall':
 			case 'methodResponse':
@@ -252,7 +252,7 @@ class IXR_Message {
 				$valueFlag = true;
 				break;
 			case 'double':
-				$value = (double)trim($this->_currentTagContents);
+        $value = (float)trim($this->_currentTagContents);
 				$this->_currentTagContents = '';
 				$valueFlag = true;
 				break;
@@ -276,7 +276,7 @@ class IXR_Message {
 				}
 				break;
 			case 'boolean':
-				$value = (boolean)trim($this->_currentTagContents);
+       $value = (bool)trim($this->_currentTagContents);
 				$this->_currentTagContents = '';
 				$valueFlag = true;
 				break;
@@ -334,7 +334,7 @@ class IXR_Request {
 	var $args;
 	var $xml;
 
-	function IXR_Request($method, $args) {
+  function __construct($method, $args) {
 		$this->method = $method;
 		$this->args = $args;
 		$xml = '';
@@ -360,7 +360,7 @@ class IXR_Error {
 	var $code;
 	var $message;
 
-	function IXR_Error($code, $message) {
+ function __construct($code, $message) {
 		$this->code = $code;
 		$this->message = $message;
 	}
@@ -397,7 +397,7 @@ class IXR_Date {
 	var $minute;
 	var $second;
 
-	function IXR_Date($time) {
+  function __construct($time) {
 		// $time can be a PHP timestamp or an ISO one
 		if (is_numeric($time)) {
 			$this->parseTimestamp($time);
@@ -441,7 +441,7 @@ class IXR_Date {
 class IXR_Base64 {
 	var $data;
 
-	function IXR_Base64($data) {
+  function __construct($data) {
 		$this->data = $data;
 	}
 
@@ -466,7 +466,7 @@ class IXR_Client_Gbx {
 	// Storage place for an error message
 	var $error = false;
 
-	function IXR_Client_Gbx() {
+ function __construct() {
 		$this->socket = false;
 		$this->reqhandle = 0x80000000;
 	}
@@ -481,7 +481,7 @@ class IXR_Client_Gbx {
 			$this->error = new IXR_Error(-32300, "transport error - could not open socket (error: $errno, $errstr)");
 			return false;
 		}
-		@stream_set_timeout($this->_socket, 0, 100000 * $opentimeout);
+    @stream_set_timeout($this->socket, 0, 100000 * $opentimeout);
 
 		// handshake
 		$array_result = multi_endian_unpack('Vsize', fread($this->socket, 4));
@@ -886,10 +886,10 @@ function multi_endian_unpack($format, $data){
 			$repeater = intval(substr($f_v, 1));
 			if ($repeater == 0)
 				$repeater = 1;
-			if ($f_v{1} == '*') {
+     if ($f_v[1] == '*') {
 				$repeater = count($ar) - $i;
 			}
-			if ($f_v{0} != 'd') {
+     if ($f_v[0] != 'd') {
 				$i += $repeater;
 				continue;
 			}

@@ -155,3 +155,41 @@ These are recorded migration findings, not tooling failures. Application code
 has not been changed to address them yet. Syntax success elsewhere does not
 prove runtime compatibility; constructors, removed APIs, and event behavior
 still need audit and regression tests.
+
+### Shared GBX/XML-RPC compatibility batch
+
+Updated `includes/GbxRemote.fast.php` and `includes/GbxRemote.response.php`:
+
+- Replaced legacy constructors with `__construct`, including inherited client initialization.
+- Replaced removed curly-brace string offsets and deprecated casts.
+- Registered XML callbacks as object callables instead of using `xml_set_object`.
+- Released parser objects without the deprecated `xml_parser_free` function.
+- Initialized parser buffers and parameter lists and used the declared tag property.
+- Made string escaping explicit to preserve legacy quote handling under PHP 8 defaults.
+- Corrected the socket property used when setting the initialization timeout.
+- Finalized XML parsing so incomplete XML is rejected.
+
+`tools/tests/xmlrpc.php` provides 39 offline checks for value encodings, exact
+request bytes, nested responses, binary/date values, faults, malformed XML,
+callbacks, constructor initialization, queue draining, and header decoding.
+PHP diagnostics are converted to exceptions in this suite. `tools/Test-Php.ps1`
+now runs it after successful syntax checks.
+
+Validation under PHP 8.5.11: all 90 PHP files passed syntax checks, all 14 runtime
+checks passed, and all 39 protocol checks passed. No dedicated server, network
+transport, or production database was exercised. Timestamp-based date conversion
+and transport recovery behavior still require focused tests before further fixes.
+
+### Remaining audit findings
+
+| Module | Confirmed work to investigate next |
+| --- | --- |
+| `includes/web_access.php` | Legacy `Webaccess` and `WebaccessUrl` constructors; HTTP lifecycle and callback compatibility |
+| `includes/xmlrpc_db_access.php` | Legacy `XmlrpcDB` constructor; remote database callbacks |
+| `includes/replayparser.inc.php` | Legacy constructor, `utf8_encode`, XML callback registration and parser lifecycle |
+| `includes/xml_parser.php` | Deprecated parser cleanup and malformed input handling |
+| `includes/fast_general.php` | Legacy procedural ZIP APIs |
+| `plugins/plugin.02.mysql.php`, `plugins/plugin.85.match.php` | Removed `mysql_*` APIs and reconnect/result semantics |
+
+This inventory is not a complete runtime audit. Plugin dispatch, configuration,
+state restoration, custom plugins, and game-mode behavior remain pending.
