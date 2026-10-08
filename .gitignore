@@ -1,0 +1,8 @@
+.vs/
+/fastlog/
+*.log
+.env
+.env.*
+!.env.example
+*.cfg
+!/ingame.cfg
