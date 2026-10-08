@@ -2200,11 +2200,13 @@ function actionCompare($a, $b){
 //------------------------------------------
 function loadPlugins($dir, $chkstr, $begin=true){
 	global $_debug,$_Game,$_is_relay,$_use_cb;
+ if(!is_dir($dir))
+		return;
 	if($dir_handler = opendir($dir)){
 		while($file = readdir($dir_handler)){
 			$pos = strpos($file, $chkstr);
 			$pos2 = strpos($file, '.php');
-			if($pos !== false && (!$begin || $pos == 0) && ($pos2 == strlen($file)-4)){
+     if($pos !== false && (!$begin || $pos == 0) && ($pos2 !== false && $pos2 == strlen($file)-4)){
 				if($_debug>2) console2("###################\n# Loading $dir/$file");
 				include_once($dir.'/'.$file);
 			}
@@ -2288,6 +2290,9 @@ function callFuncs(){
 //------------------------------------------
 function callFuncsArray($args){
 	global $_debug,$_mldebug,$_pdebug,$_memdebug,$_memdebugs,$_memdebugmode,$_plugin_funclist,$_funcs_plugin,$_response,$_response_error,$_drop_current_event,$_functype,$_callFuncsArgs;
+  $args = array_values($args);
+	if(!isset($args[0]))
+		return;
 	$_functype = $args[0];
 	if($_debug>11 && $_functype != 'Everytime') console2("# Exist plugin function ? ".$_functype);
 	if($_functype == 'Function'){
@@ -2339,13 +2344,13 @@ function callFuncsArray($args){
 					if(!isset($_memdebugs[$func]))
 						$_memdebugs[$func] = 0;
 					$mem = memory_get_usage($_memdebugmode);
-					$ret = call_user_func_array($func,$_callFuncsArgs);
+         $ret = call_user_func_array($func,array_values($_callFuncsArgs));
 					$dmem = memory_get_usage($_memdebugmode) - $mem;
 					$_memdebugs[$func] += $dmem;
 					if($mem>10000000 && ($dmem != 0 || $_memdebugs[$func] < -2000000 || $_memdebugs[$func] > 2000000)) console2("#mem: $mem # $dmem # {$_memdebugs[$func]} # $func(".@implode(',',$args).")");
 				}else{
 					// normal
-					$ret = call_user_func_array($func,$_callFuncsArgs);
+         $ret = call_user_func_array($func,array_values($_callFuncsArgs));
 				}
 
 				// restore general debug values

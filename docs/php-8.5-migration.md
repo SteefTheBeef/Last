@@ -279,6 +279,25 @@ queued-query replay after recovery, authentication failure, session charset,
 schema compatibility, and persisted match rows need isolated database tests.
 These offline tests do not establish production database interoperability.
 
+### Plugin loader and event dispatch compatibility batch
+
+The shared plugin loader now requires an actual `.php` suffix and ignores absent
+optional directories. Event dispatch normalizes argument lists to positional
+values so PHP 8 named-argument interpretation does not change legacy callback
+semantics. Empty event arrays are ignored. Handler argument mutation remains
+supported, including normal and memory-debug dispatch paths.
+
+`tools/tests/dispatch.php` adds 11 strict offline checks for priorities, reverse
+and post handlers, argument mutation, direct function events, dropping events,
+disabled/custom plugin registration, and temporary-directory plugin loading.
+All 95 PHP files pass syntax checks and all 151 checks across seven suites pass.
+
+This does not exercise full controller startup or game callbacks. The startup
+review identified additional state-restoration work: validate serialized state
+types, handle corrupt serialized input, guard missing live snapshot fields, and
+validate keepalive timestamps before arithmetic. Those changes need dedicated
+fixtures and are intentionally not included in the dispatch batch.
+
 ### Remaining audit findings
 
 | Module | Confirmed work to investigate next |
@@ -289,6 +308,7 @@ These offline tests do not establish production database interoperability.
 | `includes/xml_parser.php` | Configuration integration and legacy XML builder escaping |
 | `includes/fast_general.php` | Broader shared-helper runtime audit; ZIP APIs migrated |
 | `plugins/plugin.02.mysql.php`, `plugins/plugin.85.match.php` | Live mysqli initialization, recovery/replay, schema and stored-row validation |
+| `plugins/plugin.01.players.php` | Serialized-state validation and live-restoration timestamp/field guards |
 
-This inventory is not a complete runtime audit. Plugin dispatch, configuration,
+This inventory is not a complete runtime audit. Full plugin dispatch integration, configuration,
 state restoration, custom plugins, and game-mode behavior remain pending.
