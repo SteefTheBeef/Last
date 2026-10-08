@@ -45,7 +45,7 @@ try {
     $summary = "Syntax checks: $($files.Count) files, $failures failures."
     $summary | Tee-Object -FilePath $report -Append | Write-Host
     if ($failures -eq 0) {
-        foreach ($suite in @('xmlrpc.php', 'webaccess.php', 'xml-replay.php', 'zip.php', 'mysql.php', 'dispatch.php')) {
+        foreach ($suite in @('xmlrpc.php', 'webaccess.php', 'xml-replay.php', 'zip.php', 'mysql.php', 'dispatch.php', 'state.php')) {
             $output = & $PhpPath @phpArguments (Join-Path $PSScriptRoot "tests/$suite") 2>&1
             if ($LASTEXITCODE -ne 0) {
                 $failures++

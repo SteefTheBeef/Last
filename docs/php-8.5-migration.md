@@ -298,6 +298,28 @@ types, handle corrupt serialized input, guard missing live snapshot fields, and
 validate keepalive timestamps before arithmetic. Those changes need dedicated
 fixtures and are intentionally not included in the dispatch batch.
 
+### State restoration compatibility batch
+
+`playersRestoreFastState` now decodes snapshots with object instantiation disabled,
+handles corrupt serialized data without leaking parser warnings, and rejects
+non-array top-level snapshots. Its temporary diagnostic handler is restored after
+decoding. The existing serialized array format remains unchanged.
+
+Keepalive entries and integer timestamps are validated before arithmetic. Live
+restoration requires array-shaped challenge, player-list, and ranking metadata;
+incomplete snapshots fall back to the existing previous/start selection. Valid
+live snapshots still report player/ranking changes and use the same age threshold.
+
+Custom plugins storing objects in snapshots must be reviewed: such values will
+not be instantiated. Nested plugin-specific state is not fully schema-validated
+by this change. Production snapshot compatibility must be tested privately.
+
+`tools/tests/state.php` adds 24 strict checks with temporary files and stubbed
+server interactions, covering live/previous/start paths, invalid data, missing
+fields, timestamps, changed players/rankings, and relay delegation. All 96 PHP
+files pass syntax checks and all 175 checks across eight suites pass under PHP
+8.5.11. No production state, dedicated server, or external service was used.
+
 ### Remaining audit findings
 
 | Module | Confirmed work to investigate next |
@@ -308,7 +330,7 @@ fixtures and are intentionally not included in the dispatch batch.
 | `includes/xml_parser.php` | Configuration integration and legacy XML builder escaping |
 | `includes/fast_general.php` | Broader shared-helper runtime audit; ZIP APIs migrated |
 | `plugins/plugin.02.mysql.php`, `plugins/plugin.85.match.php` | Live mysqli initialization, recovery/replay, schema and stored-row validation |
-| `plugins/plugin.01.players.php` | Serialized-state validation and live-restoration timestamp/field guards |
+| `plugins/plugin.01.players.php` | Real snapshot integration, plugin-specific state shapes, and other player lifecycle paths |
 
 This inventory is not a complete runtime audit. Full plugin dispatch integration, configuration,
 state restoration, custom plugins, and game-mode behavior remain pending.

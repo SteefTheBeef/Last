@@ -4206,7 +4206,17 @@ function playersRestoreFastState(){
 		insertEvent('RestoreInfos','start',-1,true,true);
 		return;
 	}
-	if(($_StoredInfos = unserialize($datas)) === false){
+  set_error_handler(function($severity,$message){
+		throw new UnexpectedValueException($message);
+	});
+	try {
+		$_StoredInfos = unserialize($datas,array('allowed_classes'=>false));
+	} catch (UnexpectedValueException $exception) {
+		$_StoredInfos = false;
+	} finally {
+		restore_error_handler();
+	}
+	if(!is_array($_StoredInfos)){
 		console2("playersRestoreFastState:: failed to read stored datas in {$_StoreFile} !");
 		$_StoredInfos = array();
 		insertEvent('RestoreInfos','start',-1,true,true);
@@ -4216,10 +4226,14 @@ function playersRestoreFastState(){
 	
 	// is FastKeepAlive present ?   FastKeepAlive is stored every minute, so consider <90s for 'live' case
 	$liveage = -1;
-	foreach($_CallVoteRatios as $cvr){
-		if(strncmp($cvr['Command'],'FastKeepAlive:',14) == 0){
-			$liveage = time() - substr($cvr['Command'],14);
-			break;
+  foreach(is_array($_CallVoteRatios) ? $_CallVoteRatios : array() as $cvr){
+    if(is_array($cvr) && isset($cvr['Command']) && is_string($cvr['Command']) &&
+			 strncmp($cvr['Command'],'FastKeepAlive:',14) == 0){
+			$timestamp = filter_var(substr($cvr['Command'],14),FILTER_VALIDATE_INT,array('options'=>array('min_range'=>0)));
+			if($timestamp!==false){
+				$liveage = time() - $timestamp;
+				break;
+			}
 		}
 	}
 	//$liveage = -1;
@@ -4227,7 +4241,10 @@ function playersRestoreFastState(){
 
 	// send RestoreInfos event
 	if($_RestoreLive && $liveage >= 0 && $liveage < 90 && 
-		 isset($_ChallengeInfo['UId']) && isset($_StoredInfos['ChallengeInfo']['UId']) &&
+    isset($_ChallengeInfo['UId']) && isset($_StoredInfos['ChallengeInfo']) &&
+		 is_array($_StoredInfos['ChallengeInfo']) && isset($_StoredInfos['ChallengeInfo']['UId']) &&
+     isset($_StoredInfos['PlayerList'],$_StoredInfos['Ranking']) &&
+		 is_array($_StoredInfos['PlayerList']) && is_array($_StoredInfos['Ranking']) &&
 		 $_ChallengeInfo['UId'] == $_StoredInfos['ChallengeInfo']['UId']){
 		$playerschanged = ($_StoredInfos['PlayerList'] != $_PlayerList);
 		$rankingchanged = ($_StoredInfos['Ranking'] != $_Ranking);
