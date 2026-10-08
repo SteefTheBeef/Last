@@ -107,6 +107,33 @@ $client->cb_message = array(array('TrackMania.BeginRound', array()));
 checkProtocol($client->getCBResponses() === array(array('TrackMania.BeginRound', array()))
     && $client->getCBResponses() === array(), 'Callback queue drain');
 
+$client->async_responses = array('RH1' => false, 'RH2' => null, 'RH3' => $state);
+checkProtocol($client->getAsyncResponses('RH1') === array('RH1' => false), 'False-valued async response retrieved');
+checkProtocol($client->getAsyncResponses('RH2') === array('RH2' => null), 'Null-valued async response retrieved');
+checkProtocol($client->getAsyncResponses('unknown') === array()
+    && $client->async_responses === array('RH3' => $state), 'Unknown async handle preserves queue');
+checkProtocol($client->getAsyncResponses() === array('RH3' => $state)
+    && $client->getAsyncResponses() === array(), 'Async queue drain');
+checkProtocol($client->getAsyncResponses('RH1') === array(), 'Async handle consumed exactly once');
+checkProtocol($client->readAsync(0) === false && $client->getErrorCode() === -32300, 'Uninitialized asynchronous poll reports error');
+
+class OfflineAsyncClient extends IXR_Client_Gbx
+{
+    public $polledTimeout;
+
+    function readCB($timeout = 2000)
+    {
+        $this->polledTimeout = $timeout;
+        $this->async_responses['RHfixture'] = false;
+        return false;
+    }
+}
+$asyncClient = new OfflineAsyncClient();
+checkProtocol($asyncClient->readAsync(1234) === true && $asyncClient->polledTimeout === 1234,
+    'Async poll delegates timeout and reports response availability');
+checkProtocol($asyncClient->getAsyncResponses('RHfixture') === array('RHfixture' => false),
+    'Polled false response remains retrievable');
+
 big_endian_test();
 checkProtocol(multi_endian_unpack('Vsize/Vhandle', pack('VV', 42, 0x80000001))
     === array('size' => 42, 'handle' => 0x80000001), 'GBX header decoding');

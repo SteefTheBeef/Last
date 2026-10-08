@@ -680,7 +680,7 @@ class IXR_Client_Gbx {
 	// Read callbacks messages and async responses
 	function readAsync($timeout = 2000) {  // timeout 2 ms
 		// same as readCB() except the returned value
-		readCB($timeout);
+   $this->readCB($timeout);
 		return count($this->async_responses) > 0;
 	}
 
@@ -807,10 +807,10 @@ class IXR_Client_Gbx {
 			$messages = $this->async_responses;
 			$this->async_responses = array();
 			return $messages;
-		}elseif(isset($this->async_responses[$reqhandle])){
+   }elseif(array_key_exists($reqhandle,$this->async_responses)){
 			$messages = array($reqhandle=>$this->async_responses[$reqhandle]);
-			$this->async_responses[$reqhandle] = false;
 			unset($this->async_responses[$reqhandle]);
+     return $messages;
 		}
 		return array();
 	}

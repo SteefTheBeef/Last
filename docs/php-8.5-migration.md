@@ -338,10 +338,32 @@ not complete startup or gameplay certification. Full plugin initialization,
 commands, player events, all game modes, and real service integrations remain
 pending staging validation.
 
+### Asynchronous GBX client regression batch
+
+`readAsync` now delegates to the client's `readCB` method instead of an undefined
+global function. Retrieving a specific asynchronous handle now returns its
+response before consuming it. False and null response values are preserved;
+unknown handles leave the queue untouched.
+
+Eight additional strict offline checks cover response retrieval, one-time
+consumption, full-queue draining, uninitialized polling, timeout forwarding,
+and polling delegation. Protocol coverage is now 47 checks. All 97 PHP files
+pass syntax checks and all 194 checks across nine suites pass under PHP 8.5.11.
+These checks use an offline polling subclass, not a real socket or game server.
+Partial reads, socket framing, timeouts, and reconnects still require transport
+tests and staging validation.
+
+Visual Studio analysis is now available and reports existing PHP1412
+unassigned-variable findings in shared helpers, callback handlers, commands,
+and game-mode plugins. These are not covered by syntax success. They require
+targeted runtime tests and fixes in subsequent batches; the asynchronous patch
+does not resolve them or certify a clean IDE build.
+
 ### Remaining audit findings
 
 | Module | Confirmed work to investigate next |
 | --- | --- |
+| `includes/GbxRemote.fast.php` | Real asynchronous transport, partial reads, timeouts, and reconnect behavior |
 | `includes/web_access.php` | Real socket lifecycle, timeout handling, and malformed HTTP metadata |
 | `includes/xmlrpc_db_access.php` | Service interoperability and malformed response handling |
 | `includes/replayparser.inc.php` | Representative real replay samples and legacy encoding validation |
