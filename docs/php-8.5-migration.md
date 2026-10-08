@@ -375,6 +375,21 @@ findings. All 98 PHP files pass syntax checks and all 205 checks across ten
 suites pass under PHP 8.5.11. Other analyzer findings in callback handlers,
 commands, and game-mode plugins remain pending targeted investigation.
 
+### Team commands and shared callback scope batch
+
+`/blue` and `/red` now import the shared server options when evaluating play
+access. Password-protected servers do not grant new play rights, existing rights
+are retained, and externally forced spectator state remains respected.
+
+The multicall response handler now imports the flow-transition event map.
+`managePlayer` imports server identity and relay storage so relay discovery updates
+the shared table, excludes the controller's own server, and preserves master flags.
+
+`tools/tests/commands-callbacks.php` adds 16 strict offline checks using stubbed
+server calls. All 99 PHP files pass syntax checks and all 221 checks across eleven
+suites pass under PHP 8.5.11. Match lifecycle and custom game-mode analyzer findings
+remain pending; no production commands or network callbacks were executed.
+
 ### Remaining audit findings
 
 | Module | Confirmed work to investigate next |

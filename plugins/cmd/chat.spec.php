@@ -94,7 +94,7 @@ function chat_play($author, $login, $params){
 
 // blue [play]
 function chat_blue($author, $login, $params){
-	global $_players,$_is_relay;
+  global $_players,$_ServerOptions,$_is_relay;
 	if($_is_relay)
 		return;
 	$msg = localeText(null,'server_message').localeText(null,'interact');
@@ -125,7 +125,7 @@ function chat_blue($author, $login, $params){
 
 // red [play]
 function chat_red($author, $login, $params){
-	global $_players,$_is_relay;
+  global $_players,$_ServerOptions,$_is_relay;
 	if($_is_relay)
 		return;
 	$msg = localeText(null,'server_message').localeText(null,'interact');

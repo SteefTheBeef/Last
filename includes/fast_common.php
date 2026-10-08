@@ -1278,7 +1278,7 @@ function multicallAutoStoreInfos() {
 	global $_guest_list,$_ignore_list,$_ban_list,$_black_list,$_MaxMaps;
 	global $_CallVoteRatios,$_ForcedMods,$_ForcedMusic,$_ServerPackMask;
 	global $_playernetstatTime,$_playerlistTime,$_currentTime,$_ServerCoppers;
-	global $_EndMatchCondition,$_LadderServerLimits,$_use_flowcontrol,$_MFCTransitionGet,$_MFCTransition;
+ global $_EndMatchCondition,$_LadderServerLimits,$_use_flowcontrol,$_MFCTransitionGet,$_MFCTransition,$_transition_events;
 
 	if(!isset($_multicall_response['multicall']))
 		return;
@@ -1745,7 +1745,7 @@ function playerConnect($login,$caller='',$playerinfo=null){
 // CALLED BY: multicallAutoStoreInfos(), GetPlayerInfo response, TrackMania.PlayerInfoChanged callback
 //------------------------------------------
 function managePlayer($login,$playerinfo) {
-	global $_debug,$_old_PlayerList,$_PlayerList;
+ global $_debug,$_old_PlayerList,$_PlayerList,$_SystemInfo,$_relays;
 
 	//debugPrint("managePlayer - playerinfo",$playerinfo);
 	$playerinfo['Login'] = ''.$playerinfo['Login'];
