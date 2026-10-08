@@ -26,20 +26,29 @@ class ReplayParser {
 	 * @return ReplayParser
 	 *        If $uid is empty, replay data couldn't be extracted
 	 */
-	function ReplayParser($replaydata) {
+  function __construct($replaydata) {
 
 		$this->replaydata = $replaydata;
 		$this->ptr = 0;
-		$this->getData();
+   try {
+			if ($this->getData() === false) {
+				$this->uid = null;
+			}
+		} catch (UnexpectedValueException $exception) {
+			$this->uid = null;
+			$this->parsedxml = array();
+		}
 		$this->replaydata = '';  // for print_r
 	}  // ReplayParser
 
 	// data read function
 	private function ReadData($len) {
 
-		$data = '';
-		while ($len-- > 0)
-			$data .= $this->replaydata[$this->ptr++];
+   if ($len < 0 || $len > strlen($this->replaydata) - $this->ptr) {
+			throw new UnexpectedValueException('Truncated replay data');
+		}
+		$data = substr($this->replaydata, $this->ptr, $len);
+		$this->ptr += $len;
 		return $data;
 	}  // ReadData
 
@@ -50,7 +59,7 @@ class ReplayParser {
 		$result = unpack('Vlen', $data);
 		$len = $result['len'];
 		if ($len <= 0 || $len >= 0x10000) {  // for large XML blocks
-			return 'read error';
+      throw new UnexpectedValueException('Invalid replay string length');
 		}
 		$data = $this->ReadData($len);
 		return $data;
@@ -156,29 +165,29 @@ class ReplayParser {
 		if ($this->xml) {
 			// define a dedicated parser to handle the attributes
 			$xml_parser = xml_parser_create();
-			xml_set_object($xml_parser, $this);
-			xml_set_element_handler($xml_parser, 'startTag', 'endTag');
-			xml_set_character_data_handler($xml_parser, 'charData');
+     xml_set_element_handler($xml_parser, array($this, 'startTag'), array($this, 'endTag'));
+			xml_set_character_data_handler($xml_parser, array($this, 'charData'));
 
 			// escape '&' characters
-			$this->xml = str_replace('&', '<![CDATA[&]]>', $this->xml);
+     $this->xml = preg_replace('/&(?!#\d+;|#x[0-9a-fA-F]+;|amp;|lt;|gt;|quot;|apos;)/', '&amp;', $this->xml);
+			$xml = mb_check_encoding($this->xml, 'UTF-8')
+				? $this->xml : mb_convert_encoding($this->xml, 'UTF-8', 'ISO-8859-1');
 
-			if (!xml_parse($xml_parser, utf8_encode($this->xml), true)) {
-				die(sprintf("ReplayParser XML error: %s at line %d\n",
-				            xml_error_string(xml_get_error_code($xml_parser)),
-				            xml_get_current_line_number($xml_parser)));
+     if (!xml_parse($xml_parser, $xml, true)) {
+				$this->parsedxml = array();
+				return false;
 			}
-			xml_parser_free($xml_parser);
+     unset($xml_parser);
 
 			// extract some specific attributes that aren't in the Header block
-			$this->xmlver = $this->parsedxml['HEADER']['VERSION'];
-			$this->exever = $this->parsedxml['HEADER']['EXEVER'];
-			$this->respawns = $this->parsedxml['TIMES']['RESPAWNS'];
-			$this->stuntscore = $this->parsedxml['TIMES']['STUNTSCORE'];
-			$this->validable = $this->parsedxml['TIMES']['VALIDABLE'];
+      $this->xmlver = $this->parsedxml['HEADER']['VERSION'] ?? null;
+			$this->exever = $this->parsedxml['HEADER']['EXEVER'] ?? null;
+			$this->respawns = $this->parsedxml['TIMES']['RESPAWNS'] ?? null;
+			$this->stuntscore = $this->parsedxml['TIMES']['STUNTSCORE'] ?? null;
+			$this->validable = $this->parsedxml['TIMES']['VALIDABLE'] ?? null;
 			if (isset($this->parsedxml['CHECKPOINTS'])) {
-				$this->cpscur = $this->parsedxml['CHECKPOINTS']['CUR'];
-				$this->cpslap = $this->parsedxml['CHECKPOINTS']['ONELAP'];
+       $this->cpscur = $this->parsedxml['CHECKPOINTS']['CUR'] ?? null;
+				$this->cpslap = $this->parsedxml['CHECKPOINTS']['ONELAP'] ?? null;
 			}
 		}
 	}  // getData

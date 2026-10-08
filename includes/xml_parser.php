@@ -10,14 +10,19 @@
 function xml_parse_string($xmlstr,$attrmix=false){
 	global $_xml_parser_values;
 	$res = array();
+	$_xml_parser_values = array();
 
 	if(strlen($xmlstr)>5){
 		$parser = xml_parser_create('UTF-8');
 		xml_parser_set_option($parser,XML_OPTION_CASE_FOLDING,0);
 		xml_parser_set_option($parser,XML_OPTION_SKIP_WHITE,0);
 		xml_parser_set_option($parser,XML_OPTION_TARGET_ENCODING,'UTF-8');
-		xml_parse_into_struct($parser,$xmlstr,$_xml_parser_values,$tags);
-		xml_parser_free($parser);
+   $parsed = xml_parse_into_struct($parser,$xmlstr,$_xml_parser_values,$tags);
+		unset($parser);
+		if(!$parsed){
+			$_xml_parser_values = array();
+			return $res;
+		}
 		//debugPrint("xml_parse_string - _xml_parser_values",$_xml_parser_values);
 		//debugPrint("xml_parse_string - tags",$tags);
 		$res = xml_parser_buildarray(reset($_xml_parser_values),$attrmix);

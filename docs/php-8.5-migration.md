@@ -202,14 +202,39 @@ Validation under PHP 8.5.11: 91 PHP files pass syntax checks, with 14 runtime,
 39 protocol, and 30 HTTP/database checks passing. Real HTTP socket lifecycle,
 service interoperability, and database integration still require staging tests.
 
+### XML utility and replay compatibility batch
+
+Updated `includes/xml_parser.php` and `includes/replayparser.inc.php`:
+
+- Removed deprecated XML object registration and explicit parser-free calls.
+- Reset XML parser state and reject malformed documents rather than returning
+  partially parsed configuration data.
+- Modernized the replay constructor and bounded binary reads and string lengths.
+- Reject malformed replay XML without terminating the controller. Invalid replay
+  input leaves an empty UID, matching the parser's documented failure contract.
+- Preserve valid UTF-8 replay XML, with explicit ISO-8859-1 fallback for legacy
+  bytes instead of deprecated `utf8_encode`.
+- Escape bare ampersands while preserving existing XML entities.
+- Treat absent optional XML metadata as null without undefined-key warnings.
+
+`tools/tests/xml-replay.php` adds 25 strict offline checks for XML parsing/building,
+repeated tags, attributes, file round trips, synthetic replay metadata, optional
+fields, encoding, malformed XML, and invalid binary input. Every truncated prefix
+of the valid synthetic replay fixture is tested for safe rejection.
+
+Validation under PHP 8.5.11: all 92 PHP files pass syntax checks and all 108 checks
+pass across the four suites. These tests use synthetic replay data; representative
+real replay samples and game-server integration remain necessary before release.
+The XML builder's legacy escaping behavior was not changed in this batch.
+
 ### Remaining audit findings
 
 | Module | Confirmed work to investigate next |
 | --- | --- |
 | `includes/web_access.php` | Real socket lifecycle, timeout handling, and malformed HTTP metadata |
 | `includes/xmlrpc_db_access.php` | Service interoperability and malformed response handling |
-| `includes/replayparser.inc.php` | Legacy constructor, `utf8_encode`, XML callback registration and parser lifecycle |
-| `includes/xml_parser.php` | Deprecated parser cleanup and malformed input handling |
+| `includes/replayparser.inc.php` | Representative real replay samples and legacy encoding validation |
+| `includes/xml_parser.php` | Configuration integration and legacy XML builder escaping |
 | `includes/fast_general.php` | Legacy procedural ZIP APIs |
 | `plugins/plugin.02.mysql.php`, `plugins/plugin.85.match.php` | Removed `mysql_*` APIs and reconnect/result semantics |
 
