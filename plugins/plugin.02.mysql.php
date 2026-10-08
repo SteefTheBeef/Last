@@ -40,10 +40,8 @@ function dbmysql_query($query){
 
 	// if DB available then send query
 	if($_DB!==false){
-		$result = @mysql_query($query);
+   $result = dbmysql_execute($query,$errno,$errstr);
 		if($result === false){
-			$errno = mysql_errno();
-			$errstr = mysql_error();
 			// connection lost ? try to reconnect, then resend.
 			if($errno==2006 || $errno==2013){ // http://dev.mysql.com/doc/refman/5.1/en/error-handling.html
 				// it seems that keepalive was too big, reduce it
@@ -53,11 +51,7 @@ function dbmysql_query($query){
 				dbmysql_connection();
 				if($_DB!==false){
 					// resend
-					$result = @mysql_query($query);
-					if($result === false){
-						$errno = mysql_errno();
-						$errstr = mysql_error();
-					}
+         $result = dbmysql_execute($query,$errno,$errstr);
 
 				}else{
 					$_DBretry = true;
@@ -98,6 +92,20 @@ function dbmysql_query($query){
 	return false;
 }
 
+function dbmysql_execute($query,&$errno,&$errstr){
+	global $_DB;
+	try {
+		$result = @$_DB->query($query);
+		$errno = $_DB->errno;
+		$errstr = $_DB->error;
+		return $result;
+	} catch (mysqli_sql_exception $exception) {
+		$errno = $exception->getCode();
+		$errstr = $exception->getMessage();
+		return false;
+	}
+}
+
 
 //--------------------------------------------------------------
 // init mysql connection
@@ -132,6 +140,8 @@ function dbmysqlEveryminute($event,$minutes){
 			// do keep alive
 			$_DBkeepalive_time = $time;
 			$result = dbmysql_query('show tables;');
+     if($result instanceof mysqli_result)
+				$result->free();
 			if($result !== false && $_DBkeepalive < 15)
 				$_DBkeepalive++;
 			console("dbmysqlEveryminute:: mysql keepalive ! ($_DBkeepalive)");
@@ -144,12 +154,12 @@ function dbmysqlEveryminute($event,$minutes){
 // open connection to database, if failed then global $_DB is false
 // --------------------------------------------------------------
 function dbmysql_connection(){
-	global $_debug,$_DB,$_DBserver,$_DBuser,$_DBpassword,$_DBbase,$_DBretry,$_DBretry_queries,$_DBkeepalive_time;
+ global $_debug,$_DB,$_DBserver,$_DBuser,$_DBpassword,$_DBbase,$_DBretry,$_DBretry_queries,$_DBkeepalive_time,$_DBport,$_DBsocket;
 	$_DBkeepalive_time = time();
-	if(!function_exists('mysql_pconnect')){
+ if(!class_exists('mysqli')){
 		console("Mysql is not supported by your php setup.");
-		$_DB===false;
-		return;
+   $_DB = false;
+		return false;
 	}
 	if($_DB!==false)
 		dbmysql_close();
@@ -159,15 +169,20 @@ function dbmysql_connection(){
 		 isset($_DBpassword) && $_DBpassword!='' &&
 		 isset($_DBbase) && $_DBbase!=''){
 
-		if(@mysql_pconnect($_DBserver,$_DBuser,$_DBpassword) !== false){
-			$_DB = @mysql_select_db($_DBbase);
-
-			if($_DB !== false){
+    $host = $_DBserver;
+		$port = $_DBport ?? (int)ini_get('mysqli.default_port');
+		$socket = $_DBsocket ?? null;
+		if(preg_match('/^([^:]+):(\d+)$/',$host,$parts)){
+			$host = $parts[1];
+			$port = (int)$parts[2];
+		}
+		$connection = mysqli_init();
+		try {
+			$connected = @$connection->real_connect($host,$_DBuser,$_DBpassword,$_DBbase,$port,$socket);
+			if($connected && @$connection->set_charset('utf8') &&
+				 @$connection->query("SET time_zone = '+0:00';")){
+				$_DB = $connection;
 				$_DBretry = false;
-				// set database charset
-				@mysql_query("SET NAMES 'utf8'");
-				// set database timezone for datetime entries (+0:00 = GMT)
-				@mysql_query("SET time_zone = '+0:00';");
 
 				// succeeded to connect : send pending queries (if any)
 				if(count($_DBretry_queries) > 0){
@@ -177,12 +192,14 @@ function dbmysql_connection(){
 					foreach($queries as $query)
 						dbmysql_query($query);
 				}
-			}else{
-				console("Failed to select base '$_DBbase' !");
+        return $_DB;
 			}
-		}else{
-			console("Failed to connect to mysql '$_DBserver' as user '$_DBuser' !");
+    } catch (mysqli_sql_exception $exception) {
+			if($_debug>0) console('Mysql connection or initialization failed ('.$exception->getCode().').');
 		}
+    $connection->close();
+		$_DB = false;
+		console("Failed to connect or initialize mysql '$_DBserver' as user '$_DBuser' !");
 	}else{
 		console("Mysql database not configured : will not use it.");
 	}
@@ -195,8 +212,8 @@ function dbmysql_connection(){
 // --------------------------------------------------------------
 function dbmysql_close(){
 	global $_DB;
-	if($_DB!==false && function_exists('mysql_close'))
-		@mysql_close();
+  if($_DB!==false)
+		$_DB->close();
 	$_DB = false;
 }
 

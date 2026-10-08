@@ -3073,19 +3073,19 @@ function matchDbStore($Ranking,$ChallengeInfo,$GameInfos){
 		return;
 
 	$time = time();
-	$match = isset($_match_conf['DbTitle']) ? mysql_real_escape_string($_match_conf['DbTitle']) : mysql_real_escape_string($_match_conf['Title']);
-	$cuid = mysql_real_escape_string($ChallengeInfo['UId']);
-	$cname = mysql_real_escape_string(tm_substr($ChallengeInfo['Name']));
-	$cenv = mysql_real_escape_string($ChallengeInfo['Environnement']);
-	$srvlogin = mysql_real_escape_string(tm_substr($_SystemInfo['ServerLogin']));
-	$svrname = mysql_real_escape_string(tm_substr($_ServerOptions['Name']));
+  $match = $_DB->real_escape_string($_match_conf['DbTitle'] ?? $_match_conf['Title']);
+	$cuid = $_DB->real_escape_string($ChallengeInfo['UId']);
+	$cname = $_DB->real_escape_string(tm_substr($ChallengeInfo['Name']));
+	$cenv = $_DB->real_escape_string($ChallengeInfo['Environnement']);
+	$srvlogin = $_DB->real_escape_string(tm_substr($_SystemInfo['ServerLogin']));
+	$svrname = $_DB->real_escape_string(tm_substr($_ServerOptions['Name']));
 	
 	foreach($Ranking as &$prk){
 		$login = $prk['Login'];
 		$query = sprintf("INSERT INTO `%s` (`id`,`name`,`map_uid`,`map_name`,`environment`,`mode`,`fmode`,`login`,`nickname`,`date`,`time`,`score`,`cp`,`points`,`rank`,`srvlogin`,`srvname`)"
 										 ."VALUES (NULL,'%s','%s','%s','%s','%d','%s','%s','%s',FROM_UNIXTIME(%d),'%d','%d','%d','-1','-1','%s','%s');",
-										 $_match_db_table,$match,$cuid,$cname,$cenv,$GameInfos['GameMode'],$_FGameMode,
-										 mysql_real_escape_string(tm_substr($prk['Login'])),mysql_real_escape_string(tm_substr($prk['NickName'])),
+                  $_match_db_table,$match,$cuid,$cname,$cenv,$GameInfos['GameMode'],$_DB->real_escape_string($_FGameMode),
+                   $_DB->real_escape_string(tm_substr($prk['Login'])),$_DB->real_escape_string(tm_substr($prk['NickName'])),
 										 $time,$prk['BestTime'],$prk['Score'],count($prk['BestCheckpoints']),
 										 $srvlogin,$svrname);
 		$result = @dbmysql_query($query);

@@ -250,6 +250,35 @@ invalid/unsafe archives and disabled updater behavior. Validation under PHP 8.5.
 93 PHP files pass syntax checks and all 125 checks across five suites pass.
 No update was downloaded and no production files were extracted.
 
+### Local MySQL compatibility batch
+
+`plugins/plugin.02.mysql.php` now owns an explicit non-persistent `mysqli`
+connection in `$_DB`; disabled/unavailable connections remain `false`. The
+wrapper catches mysqli SQL exceptions locally without changing global reporting
+settings. Charset `utf8` and UTC session timezone are initialized on connection.
+Existing SQL-error returns, connection-loss reconnect/resend, and the 3000-query
+retry queue are retained. Keepalive result sets are explicitly freed.
+
+Existing host and `host:port` configuration is supported. Optional `$_DBport`
+and `$_DBsocket` values support explicit ports and Unix sockets. Socket paths
+previously embedded in the host setting should be moved to `$_DBsocket`.
+Custom plugins must use the explicit connection for escaping/fetching results;
+removed `mysql_*` functions are not shimmed. The wrapper returns mysqli result
+objects, booleans, or false rather than legacy mysql resources.
+
+`plugins/plugin.85.match.php` uses the same connection to escape match fields,
+including custom game modes. Schema and existing text charset are unchanged.
+
+`tools/tests/mysql.php` adds 15 offline checks with a fake connection, covering
+disabled initialization, results, SQL exceptions, loss/queue behavior, queue
+limits, closing, and match SQL generation. All 94 PHP files pass syntax checks
+and all 140 checks across six suites pass under PHP 8.5.11.
+
+No real MySQL connection was opened. Successful connection initialization,
+queued-query replay after recovery, authentication failure, session charset,
+schema compatibility, and persisted match rows need isolated database tests.
+These offline tests do not establish production database interoperability.
+
 ### Remaining audit findings
 
 | Module | Confirmed work to investigate next |
@@ -259,7 +288,7 @@ No update was downloaded and no production files were extracted.
 | `includes/replayparser.inc.php` | Representative real replay samples and legacy encoding validation |
 | `includes/xml_parser.php` | Configuration integration and legacy XML builder escaping |
 | `includes/fast_general.php` | Broader shared-helper runtime audit; ZIP APIs migrated |
-| `plugins/plugin.02.mysql.php`, `plugins/plugin.85.match.php` | Removed `mysql_*` APIs and reconnect/result semantics |
+| `plugins/plugin.02.mysql.php`, `plugins/plugin.85.match.php` | Live mysqli initialization, recovery/replay, schema and stored-row validation |
 
 This inventory is not a complete runtime audit. Plugin dispatch, configuration,
 state restoration, custom plugins, and game-mode behavior remain pending.
