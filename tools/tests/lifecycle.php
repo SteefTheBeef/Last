@@ -60,6 +60,20 @@ try {
     ml_scorepanelInit('Init');
     checkLifecycle($_scorepanel_hide === 1 && $_scorepanel_round_hide === 1, 'Scorepanel initialization defaults');
     checkLifecycle(isset($_HelpAdmCmd['scorepanel']), 'Scorepanel command registration');
+    $_players['test-player'] = array('ML' => array('ActionBase' => 20000));
+    checkLifecycle(manialinksGetActionBase('test-player', 100) === 20000
+        && $_players['test-player']['ML']['ActionBase'] === 20100, 'Player-specific action allocation updates shared player table');
+    checkLifecycle(manialinksGetActionBase('missing-player') === false, 'Missing player action allocation rejected');
+    $_ml_debug = 4;
+    ob_start();
+    try {
+        ml_teamInit();
+        $teamOutput = ob_get_contents();
+    } finally {
+        ob_end_clean();
+    }
+    checkLifecycle(str_contains($teamOutput, 'ml_team.Event[Init]') && $_ml_team_state === 0
+        && $_ml_team_players === array(), 'Team panel initialization supports legacy no-argument call with debug enabled');
     $_teamgap_rule = 10;
     $_GameInfos = array('GameMode' => TEAM, 'TeamUseNewRules' => true);
     $_Ranking = array();

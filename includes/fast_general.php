@@ -1046,7 +1046,7 @@ function convertSpecialChars(&$data){
 		$data = str_replace('\r', "\n", $data);
 		$data = str_replace('\n', "\n", $data);
 		if(function_exists('stripLinks'))
-			$data[$key] = stripLinks($data[$key]);
+      $data = stripLinks($data);
 	}
 }
 
@@ -1078,7 +1078,7 @@ function stripLinksFromArray(&$data){
 			}
 		}
 	}else{
-		$data[$key] = stripLinks($data[$key]);
+    $data = stripLinks($data);
 	}
 }
 

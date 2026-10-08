@@ -359,6 +359,22 @@ and game-mode plugins. These are not covered by syntax success. They require
 targeted runtime tests and fixes in subsequent batches; the asynchronous patch
 does not resolve them or certify a clean IDE build.
 
+### Text helpers and HUD scope findings
+
+Fixed scalar paths in `convertSpecialChars` and `stripLinksFromArray` that used
+an undefined array key instead of assigning the scalar itself. Nested-array
+behavior and game-specific link preservation are unchanged.
+
+`manialinksGetActionBase` now imports the shared player table so per-player
+allocations advance the player's action base. `ml_teamInit` accepts an optional
+event name defaulting to `Init`, preserving no-argument callers while fixing
+debug output that referenced an undefined variable.
+
+Eight strict text tests and three additional lifecycle checks cover these
+findings. All 98 PHP files pass syntax checks and all 205 checks across ten
+suites pass under PHP 8.5.11. Other analyzer findings in callback handlers,
+commands, and game-mode plugins remain pending targeted investigation.
+
 ### Remaining audit findings
 
 | Module | Confirmed work to investigate next |

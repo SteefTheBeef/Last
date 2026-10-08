@@ -66,7 +66,7 @@ function manialinksRemoveAction($name){
 // value >20000 then it means that some plugin was too hungry :p
 //--------------------------------------------------------------
 function manialinksGetActionBase($login=null,$size=100){
-	global $_manialinks_actionbase;
+ global $_manialinks_actionbase,$_players;
   if($login !== null && !is_string($login))
     $login = ''.$login;
 

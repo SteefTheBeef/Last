@@ -14,7 +14,7 @@ registerPlugin('ml_team',19,1.0);
 
 
 // --- other variables ---
-function ml_teamInit(){
+function ml_teamInit($event='Init'){
   global $_ml_debug,$_ml_team_state,$_ml_team_teams,$_ml_team_players;
 	if($_ml_debug>3) console("ml_team.Event[$event]");
 
