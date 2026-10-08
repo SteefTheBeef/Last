@@ -1,5 +1,10 @@
 .vs/
 /fastlog/
+/matchlog/
+/.migration-backups/
+/admin.*.xml.txt
+/store.*.fast
+/votes.xml.txt
 *.log
 .env
 .env.*

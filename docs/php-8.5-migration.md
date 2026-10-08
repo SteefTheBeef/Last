@@ -1,0 +1,118 @@
+# PHP 8.5 migration baseline
+
+## Recorded source baseline
+
+- Repository: https://github.com/SteefTheBeef/Last
+- Upstream: https://github.com/Slig06/Fast3
+- Migration branch: `migration/php-8.5`
+- Baseline commit: `48bd4cfce22a17ae949b89bb5f67f52c15a5a871`
+- Baseline tag: `baseline/php-5.5-source`
+- FAST version declared by the source: `3.2.4f`.
+- 88 PHP files were found during the initial inventory.
+- The working tree was clean before baseline preparation.
+- PHP and Composer were not available on the terminal PATH during the initial review.
+
+The tag identifies the source before compatibility changes. Its name describes the
+migration's starting point; it does not certify that this checkout has been tested
+on PHP 5.5. No controller or dedicated server has been started for this step.
+
+Local source and Git-history backups are stored in `.migration-backups/` and must
+not be committed. Copy them to independent storage before relying on them for
+recovery. These are source backups, not backups of a production deployment.
+
+## Deployment inventory
+
+This checkout has no `custom/` or `fastlog/` directory. `fast.php` currently has
+empty enabled/disabled plugin lists and commented database credential examples.
+That does not establish which plugins or credentials a deployed server uses.
+`ingame.cfg` is a tracked example, not a production configuration.
+
+Complete the following inventory privately for each deployed controller. Do not
+put passwords, accounts, raw chat logs, player data, or database dumps in Git.
+
+- [ ] Record OS, PHP executable/version, extensions, timezone, and startup command.
+- [ ] Record dedicated-server version, configuration path, and configured ports.
+- [ ] Record the deployed FAST revision and differences from this baseline.
+- [ ] Record enabled/disabled plugins, custom plugins, and locale overrides.
+- [ ] Record configured local databases and remote integrations, including Dedimania.
+- [ ] Record restore flags, game modes, points rules, and match configuration.
+- [ ] Identify configured output/copy locations outside the controller directory.
+
+## Backup checklist
+
+Take a consistent backup using a maintenance window or a suitable snapshot.
+Keep the original deployment runnable with its original PHP runtime.
+
+- [ ] Back up deployed source, `fast.php`, launch scripts, and dedicated configuration.
+- [ ] Back up `custom/`, including custom plugins, database settings, and locales.
+- [ ] Back up root `admin.<game>.<login>.xml.txt` admin lists.
+- [ ] Back up root `store.<game>.<login>.fast` serialized controller state.
+- [ ] Back up `votes.xml.txt` if present.
+- [ ] Back up `fastlog/`, `matchlog/`, and any configured external output locations.
+- [ ] Inventory and back up dedicated-server maps, match settings, records, and replays.
+- [ ] If local MySQL is enabled, export schema and data consistently and test restoring
+      the export into an isolated database.
+- [ ] Record checksums and verify backup readability or restoration.
+- [ ] Store backups outside the working checkout with appropriate access controls.
+
+The paths above are derived from current source defaults. Check deployed
+configuration and custom plugins for additional persistence paths.
+
+## Isolated staging setup
+
+- [ ] Use a separate controller directory and dedicated-server instance.
+- [ ] Use a separate server account, configuration, and non-conflicting ports.
+- [ ] Use a separate database; never point staging at the production database.
+- [ ] Remove or redirect FTP/file-copy targets and other production write paths.
+- [ ] Explicitly disable the `autoupdate` plugin in the staging configuration so
+      upstream archives cannot overwrite migration code.
+- [ ] Restrict staging access and use private test admin credentials.
+- [ ] Do not copy production serialized state into an unrelated server instance.
+- [ ] Keep test data and credentials out of Git; sanitize any committed fixtures.
+- [ ] Reproduce existing behavior on the legacy runtime if safely available.
+- [ ] Set up PHP 8.5 CLI and required extensions as the next migration step.
+
+Do not use the legacy sample launchers unchanged: they explicitly target PHP 5
+and include automatic-update restart behavior. Launcher changes belong to the
+compatibility migration after the baseline has been captured.
+
+## Behavioral baseline matrix
+
+Record legacy observations and expected results first, then compare PHP 8.5
+results using the same scenarios. Mark unavailable features explicitly rather
+than treating untested behavior as passing.
+
+| Area | Scenarios | Legacy result | PHP 8.5 result |
+| --- | --- | --- | --- |
+| Startup | Authentication, configuration, plugin loading, initial synchronization | Pending | Pending |
+| Players | Join, leave, reconnect, spectator changes, team changes | Pending | Pending |
+| Administration | Admin loading, permissions, commands, admin persistence | Pending | Pending |
+| HUD and menus | Score panels, menus, records, map information, voting | Pending | Pending |
+| Standard modes | Rounds, time attack, team, laps, stunts, cup | Pending | Pending |
+| Custom modes | TeamRelay, TeamLaps, TeamRounds; mode transitions | Pending | Pending |
+| Race lifecycle | Warmup, checkpoints, finish, round end, podium, map change | Pending | Pending |
+| Persistence | Votes, records, match results, restart and state restoration | Pending | Pending |
+| Integrations | Dedimania and local MySQL, enabled and unavailable | Pending | Pending |
+| Recovery | Dedicated disconnect/reconnect, database outage, malformed responses | Pending | Pending |
+
+Capture sanitized logs and representative XML-RPC inputs/outputs where useful.
+Never execute untrusted serialized state or run a PHP 5.5 environment exposed to
+the public network solely for testing.
+
+## Rollback
+
+The source baseline is recoverable from `baseline/php-5.5-source` or the local
+source archive. The Git bundle preserves the history present at baseline creation.
+Use a separate checkout/directory for recovery; do not reset over uncommitted work.
+Restore deployment configuration, database, and controller state from the matching
+backup and run the original runtime. Do not assume state written by migrated code
+can be read by the old deployment until that compatibility has been verified.
+
+## Step 1 completion gate
+
+Repository baseline preparation is complete when the baseline tag, source archive,
+and Git bundle have been created and validated. Operational baseline preparation
+remains pending until the deployment inventory, backups, staging isolation, and
+legacy behavior observations above have been completed.
+
+No PHP 8.5 compatibility claim should be made from source inspection alone.
