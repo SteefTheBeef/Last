@@ -320,6 +320,24 @@ fields, timestamps, changed players/rankings, and relay delegation. All 96 PHP
 files pass syntax checks and all 175 checks across eight suites pass under PHP
 8.5.11. No production state, dedicated server, or external service was used.
 
+### Bundled plugin loading and selected lifecycle batch
+
+`tools/tests/lifecycle.php` loads every bundled top-level plugin with strict PHP
+diagnostics, checks registered callbacks, and exercises rounds/team/autorestart
+defaults, HUD initialization, scorepanel initialization, and command registration.
+The legacy updater stays inactive. The test supplies startup prerequisites without
+executing `fast.php`, connecting to services, or loading deployed configuration.
+
+Team-gap round handlers now require both ranking scores before evaluating the
+win condition, avoiding undefined-key warnings during empty transition rankings.
+Existing two-team score calculations are unchanged.
+
+All 97 PHP files pass syntax checks and all 186 checks across nine suites pass
+under PHP 8.5.11, including 11 lifecycle checks. This is selected-path coverage,
+not complete startup or gameplay certification. Full plugin initialization,
+commands, player events, all game modes, and real service integrations remain
+pending staging validation.
+
 ### Remaining audit findings
 
 | Module | Confirmed work to investigate next |

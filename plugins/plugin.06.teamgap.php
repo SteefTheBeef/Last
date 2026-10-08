@@ -54,7 +54,8 @@ function teamgapBeforeEndRound($event,$delay){
 		return;
 
 	// teamgap_rule activated and in supported modes
-	if($_teamgap_rule > 1 && $_GameInfos['GameMode'] == TEAM && $_GameInfos['TeamUseNewRules']){
+  if($_teamgap_rule > 1 && $_GameInfos['GameMode'] == TEAM && $_GameInfos['TeamUseNewRules'] &&
+		 isset($_Ranking[0]['Score'],$_Ranking[1]['Score'])){
 
 		$scoregap = abs($_Ranking[0]['Score'] - $_Ranking[1]['Score']);
 		$scoremax = $_Ranking[0]['Score'] > $_Ranking[1]['Score'] ? $_Ranking[0]['Score'] : $_Ranking[1]['Score'];
@@ -83,7 +84,8 @@ function teamgapBeginRound($event){
 	global $_debug,$_GameInfos,$_teamgap_rule,$_Ranking;
 
 	// teamgap_rule activated and in supported modes
-	if($_teamgap_rule > 1 && $_GameInfos['GameMode'] == TEAM && $_GameInfos['TeamUseNewRules']){
+  if($_teamgap_rule > 1 && $_GameInfos['GameMode'] == TEAM && $_GameInfos['TeamUseNewRules'] &&
+		 isset($_Ranking[0]['Score'],$_Ranking[1]['Score'])){
 
 		$scoregap = abs($_Ranking[0]['Score'] - $_Ranking[1]['Score']);
 		$scoremax = $_Ranking[0]['Score'] > $_Ranking[1]['Score'] ? $_Ranking[0]['Score'] : $_Ranking[1]['Score'];
