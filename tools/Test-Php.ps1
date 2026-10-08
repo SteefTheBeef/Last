@@ -45,11 +45,13 @@ try {
     $summary = "Syntax checks: $($files.Count) files, $failures failures."
     $summary | Tee-Object -FilePath $report -Append | Write-Host
     if ($failures -eq 0) {
-        $output = & $PhpPath @phpArguments (Join-Path $PSScriptRoot 'tests/xmlrpc.php') 2>&1
-        if ($LASTEXITCODE -ne 0) {
-            $failures++
+        foreach ($suite in @('xmlrpc.php', 'webaccess.php')) {
+            $output = & $PhpPath @phpArguments (Join-Path $PSScriptRoot "tests/$suite") 2>&1
+            if ($LASTEXITCODE -ne 0) {
+                $failures++
+            }
+            $output | Tee-Object -FilePath $report -Append | Write-Host
         }
-        $output | Tee-Object -FilePath $report -Append | Write-Host
     }
     Write-Host "Report: $report"
 } finally {

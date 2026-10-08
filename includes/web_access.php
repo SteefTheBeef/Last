@@ -107,7 +107,7 @@ class Webaccess{
 
 	var $_WebaccessList;
 
-	function Webaccess(){
+ function __construct(){
 		$this->_WebaccessList = array();
 	}
 
@@ -309,6 +309,7 @@ class WebaccessUrl{
 	var $_wait;
 	var $_response;
 	var $_query_num;
+ var $_query_time;
 	var $_request_time;
 	var $_cookies;
 	var $_webaccess_str;
@@ -321,7 +322,7 @@ class WebaccessUrl{
   // Methods
   //-----------------------------
 
-	function WebaccessUrl(&$wa,$host,$port,$keepalive=true,$keepalive_timeout=600,$keepalive_max=300,$agent='XMLaccess'){
+ function __construct(&$wa,$host,$port,$keepalive=true,$keepalive_timeout=600,$keepalive_max=300,$agent='XMLaccess'){
 		global $_web_access_compress_xmlrpc_request,$_web_access_retry_timeout;
 		$this->wa =& $wa;
 		$this->_host = $host;
@@ -416,7 +417,7 @@ class WebaccessUrl{
 		$query['Datas'] = '';
 		$query['DatasSize'] = 0;
 		$query['DatasSent'] = 0;
-		$query['Response'] = '';
+    $query['Response'] = array();
 		$query['ResponseSize'] = 0;
 		$query['Headers'] = array();
 		$query['Close'] = false;
@@ -518,7 +519,7 @@ class WebaccessUrl{
 			}
 
 		}else{
-			console('*'.$this->_webaccess_str.'Bad callback function: '.$query['Callback']);
+      console('*'.$this->_webaccess_str.'Bad callback function: '.var_export($query['Callback'],true));
 			return false;
 		}
 		return true;
@@ -552,7 +553,7 @@ class WebaccessUrl{
 			for($i=0; $i < count($this->_spool); $i++){
 				$this->_spool[$i]['State'] = 'OPEN';
 				$this->_spool[$i]['DatasSent'] = 0;
-				$this->_spool[$i]['Response'] = '';
+       $this->_spool[$i]['Response'] = array();
 				$this->_spool[$i]['Headers'] = array();
 			}
 			$this->_response = '';
@@ -648,7 +649,7 @@ class WebaccessUrl{
 			$this->_spool[0]['State']='SEND';
 			$time = microtime(true);
 			$this->_spool[0]['Times']['send'][0] = $time;
-			$this->_spool[0]['Response'] = '';
+      $this->_spool[0]['Response'] = array();
 			$this->_spool[0]['Headers'] = array();
 
 			// finish to prepare header and data to send
@@ -701,7 +702,7 @@ class WebaccessUrl{
 				$time = microtime(true);
 				$this->_spool[0]['Times']['send'][1] = $time - $this->_spool[0]['Times']['send'][0];
 				//var_dump($this->_spool[0]['Datas']);
-				$this->_bad('Error('.$errno.')'.$errstr.', could not send datas ! ('
+        $this->_bad('Error, could not send datas ! ('
 								.$sent.' / '.($this->_spool[0]['DatasSize']-$this->_spool[0]['DatasSent']).' , '
 								.$this->_spool[0]['DatasSent'].' / '.$this->_spool[0]['DatasSize'].')'); 
 				if($this->_wait)
@@ -768,7 +769,7 @@ class WebaccessUrl{
 							$time = microtime(true);
 							$this->_spool[0]['Times']['receive'][1] = $time - $this->_spool[0]['Times']['receive'][0];
 						}
-						$this->_bad('Error('.$errno.')'.$errstr.', could not read all datas !');
+            $this->_bad('Error, could not read all datas !');
 						return;
 					}
 				}
@@ -872,7 +873,7 @@ class WebaccessUrl{
 			if(isset($callbackinfo[0]) && is_callable($callbackinfo[0])){
 				$callback_func = $callbackinfo[0];
 				$callbackinfo[0] = $this->_spool[0]['Response'];
-				call_user_func_array($callback_func,$callbackinfo);
+       call_user_func_array($callback_func,array_values($callbackinfo));
 			}
 		}
 	}

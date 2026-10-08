@@ -28,7 +28,7 @@ class XmlrpcDB{
   // Methods
   //-----------------------------
   
-  function XmlrpcDB($webaccess, $url, $game, $login, $password, $tool, $version, $nation, $packmask=''){
+  function __construct($webaccess, $url, $game, $login, $password, $tool, $version, $nation, $packmask=''){
 		$this->_webaccess = $webaccess;
 		$this->_url = $url;
 		$this->_server = array('Game'=>$game,'Login'=>$login,'Password'=>$password,'Tool'=>$tool,'Version'=>$version,'Nation'=>$nation,'Packmask'=>$packmask,'PlayersGame'=>true);
@@ -69,7 +69,7 @@ class XmlrpcDB{
 	// clear all requests, and get them if asked
 	function clearRequests($get_requests=false){
 		if($get_requests){
-			$return = array($_requests,$_callbacks);
+      $return = array($this->_requests,$this->_callbacks);
 			$this->_initRequest();
 			return $return;
 		}
@@ -152,6 +152,14 @@ class XmlrpcDB{
 		$this->addRequest(null, 'dedimania.WarningsAndTTR');
 		$webdatas = $this->_makeXMLdatas();
 		$response = $this->_webaccess->request($this->_url, null, $webdatas, true);
+   if($response===false){
+			if(!$this->_bad){
+				$this->_bad = true;
+				$this->_bad_time = time();
+			}
+			$this->_initRequest();
+			return false;
+		}
 		if(isset($response['Message']) && is_string($response['Message'])){
 			//debugPrint("XmlrpcDB->RequestWaitArray() - response['Message']",$response['Message']);
 
@@ -263,7 +271,7 @@ class XmlrpcDB{
 					$response['Data'] = $datas;
 				}
 				$callbacks[$i][0] = $response;
-				call_user_func_array($callback,$callbacks[$i]);
+       call_user_func_array($callback,array_values($callbacks[$i]));
 			}
 		}
 	}
@@ -280,7 +288,7 @@ class XmlrpcDB{
 			$params = $params[0];
 		//debugPrint("XmlrpcDB->_makeResponseDatas() - params",$params);
 		
-		if(is_array($params) && is_array($params[0]) && !isset($params[0]['methodResponse'])){
+    if(is_array($params) && isset($params[0]) && is_array($params[0]) && !isset($params[0]['methodResponse'])){
 			$params2 = array();
 			foreach($params as $key => $param){
 				

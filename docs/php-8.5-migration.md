@@ -180,12 +180,34 @@ checks passed, and all 39 protocol checks passed. No dedicated server, network
 transport, or production database was exercised. Timestamp-based date conversion
 and transport recovery behavior still require focused tests before further fixes.
 
+### HTTP and remote database compatibility batch
+
+Updated `includes/web_access.php` and `includes/xmlrpc_db_access.php`:
+
+- Modernized constructors and declared the HTTP query-time field.
+- Initialized HTTP response containers as arrays for error callback handling.
+- Removed undefined error variables from send/receive failure messages.
+- Preserved positional callback context when PHP 8 would interpret string keys
+  as named arguments.
+- Fixed request clearing to return the instance queues rather than undefined variables.
+- Guarded empty multicall responses and rejected synchronous transport requests.
+
+`tools/tests/webaccess.php` provides 30 strict offline checks covering HTTP
+construction, request headers, callback errors, retry backoff, fixed-length and
+chunked responses, gzip/deflate, incomplete responses, cookies, keepalive metadata,
+and database authentication/multicall/callback/reset behavior. A fake transport
+and fixture parsing are used; no network connection is opened.
+
+Validation under PHP 8.5.11: 91 PHP files pass syntax checks, with 14 runtime,
+39 protocol, and 30 HTTP/database checks passing. Real HTTP socket lifecycle,
+service interoperability, and database integration still require staging tests.
+
 ### Remaining audit findings
 
 | Module | Confirmed work to investigate next |
 | --- | --- |
-| `includes/web_access.php` | Legacy `Webaccess` and `WebaccessUrl` constructors; HTTP lifecycle and callback compatibility |
-| `includes/xmlrpc_db_access.php` | Legacy `XmlrpcDB` constructor; remote database callbacks |
+| `includes/web_access.php` | Real socket lifecycle, timeout handling, and malformed HTTP metadata |
+| `includes/xmlrpc_db_access.php` | Service interoperability and malformed response handling |
 | `includes/replayparser.inc.php` | Legacy constructor, `utf8_encode`, XML callback registration and parser lifecycle |
 | `includes/xml_parser.php` | Deprecated parser cleanup and malformed input handling |
 | `includes/fast_general.php` | Legacy procedural ZIP APIs |
