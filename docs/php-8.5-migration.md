@@ -227,6 +227,29 @@ pass across the four suites. These tests use synthetic replay data; representati
 real replay samples and game-server integration remain necessary before release.
 The XML builder's legacy escaping behavior was not changed in this batch.
 
+### ZIP and updater compatibility batch
+
+`unpackZip` now uses `ZipArchive`, preserving extraction into the current working
+directory and existing-file overwrites. Empty files and directories are supported,
+and archive-open, directory-creation, read, and write failures return false.
+All entry paths are checked before writes: absolute paths, drive/stream prefixes,
+parent traversal, ambiguous segments, and existing symbolic-link targets are
+rejected. Windows archive separators are normalized.
+
+The ZIP extension is now required for this helper; the legacy external `unzip`
+fallback was removed so validation is not bypassed. Extraction is not transactional:
+an I/O error after extraction starts can leave previously written files behind.
+
+Legacy auto-update is disabled by default, including direct calls to
+`fastAutoupdate`, to prevent upstream code from overwriting the migration.
+`$_allow_legacy_autoupdate = true` can explicitly opt in, but is not recommended
+for this branch. Plugin disabling remains available as an additional staging guard.
+
+`tools/tests/zip.php` runs 17 offline checks in a temporary directory, including
+invalid/unsafe archives and disabled updater behavior. Validation under PHP 8.5.11:
+93 PHP files pass syntax checks and all 125 checks across five suites pass.
+No update was downloaded and no production files were extracted.
+
 ### Remaining audit findings
 
 | Module | Confirmed work to investigate next |
@@ -235,7 +258,7 @@ The XML builder's legacy escaping behavior was not changed in this batch.
 | `includes/xmlrpc_db_access.php` | Service interoperability and malformed response handling |
 | `includes/replayparser.inc.php` | Representative real replay samples and legacy encoding validation |
 | `includes/xml_parser.php` | Configuration integration and legacy XML builder escaping |
-| `includes/fast_general.php` | Legacy procedural ZIP APIs |
+| `includes/fast_general.php` | Broader shared-helper runtime audit; ZIP APIs migrated |
 | `plugins/plugin.02.mysql.php`, `plugins/plugin.85.match.php` | Removed `mysql_*` APIs and reconnect/result semantics |
 
 This inventory is not a complete runtime audit. Plugin dispatch, configuration,

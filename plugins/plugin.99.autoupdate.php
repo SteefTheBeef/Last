@@ -11,7 +11,10 @@
 //
 ////////////////////////////////////////////////////////////////
 
-if(!function_exists('zip_open')){
+if(empty($_allow_legacy_autoupdate)){
+	console2("# Legacy autoupdate disabled: upstream updates can overwrite PHP 8.5 migration changes.");
+
+}elseif(!class_exists('ZipArchive')){
 	console2("# Autoupdate plugin inactive: the module php_zip is missing !");
 
 }else{
@@ -38,7 +41,9 @@ function autoupdatePlayerDisconnect($event,$login){
 
 
 function fastAutoupdate(){
-	global $_debug,$_FASTver,$_autoupdateStop10 ;
+ global $_debug,$_FASTver,$_autoupdateStop10,$_allow_legacy_autoupdate;
+	if(empty($_allow_legacy_autoupdate))
+		return;
 	$updateurl = 'http://slig.info/fast3.2/update/fastupdate.version.txt';
 
 	$updatexmlinfos = @file_get_contents($updateurl);

@@ -3834,49 +3834,47 @@ function file_copy($sourcefilename,$destfilename,$addcall=null) {
 //------------------------------------------
 function unpackZip($file) {
 
-	if(!function_exists('zip_open')){
-		// on windows give up, on linux try using unzip command 
-		if(!isset($_SERVER['windir'])){
-			$output = array();
-			$unzipcmd = "unzip -o $file";
-			$res = @exec($unzipcmd.' 2>&1',$output,$retval);
-			if($res !== false && $retval == 0){
-				return true;
-			}else{
-				console("*** can't unzip: module php_zip missing and '$unzipcmd' failed ($retval) *******\n"
-								.implode("\n",$output)
-								."\n*******************************************************************************");
-				return false;
-			}
-
-		}else{
-			console("Can't unzip: the module php_zip is missing !");
-			return false;
-		}
-
-	}elseif($zip = zip_open($file)) {
-		while ($zip_entry = zip_read($zip)) {
-			if (zip_entry_open($zip,$zip_entry,"r")) {
-				$buf = zip_entry_read($zip_entry, zip_entry_filesize($zip_entry));
-				$name = zip_entry_name($zip_entry);
-				if($name[strlen($name)-1] != '/'){
-					$dirname = dirname($name);
-					if($dirname != '.' && !file_exists($dirname))
-						@mkdir($dirname,0777,true);
-					@file_put_contents($name,$buf);
-				}
-				zip_entry_close($zip_entry);
-
-			}else{
-				console('Error reading part of '.$file);
-				zip_close($zip);
-				return false;
-			}
-		}
-		zip_close($zip);
-		return true;
+ if(!class_exists('ZipArchive')){
+		console("Can't unzip: the module php_zip is missing !");
+		return false;
 	}
-	return false;
+ if(!is_file($file))
+		return false;
+	$zip = new ZipArchive();
+	if($zip->open($file) !== true)
+		return false;
+	try {
+		$names = array();
+		for($i=0; $i<$zip->numFiles; $i++){
+			$name = str_replace('\\','/',$zip->getNameIndex($i));
+			$parts = explode('/',rtrim($name,'/'));
+			if($name=='' || $name[0]=='/' || strpos($name,':')!==false ||
+				 strpos($name,"\0")!==false || in_array('..',$parts,true) ||
+				 in_array('.',$parts,true) || in_array('',$parts,true))
+				return false;
+			$path = '';
+			foreach($parts as $part){
+				$path .= ($path=='' ? '' : '/').$part;
+				if(is_link($path))
+					return false;
+			}
+			$names[$i] = $name;
+		}
+		foreach($names as $i => $name){
+			$isdir = substr($name,-1)=='/';
+			$dirname = $isdir ? rtrim($name,'/') : dirname($name);
+			if(!is_dir($dirname) && !@mkdir($dirname,0777,true))
+				return false;
+			if(!$isdir){
+				$buf = $zip->getFromIndex($i);
+				if($buf===false || @file_put_contents($name,$buf)!==strlen($buf))
+					return false;
+			}
+		}
+		return true;
+	} finally {
+		$zip->close();
+	}
 }
 
 
